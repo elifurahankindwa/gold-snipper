@@ -1,0 +1,14 @@
+GOLD SNIPER BACKTEST
+========================================
+  total_trades: 21
+  wins: 12
+  losses: 9
+  win_rate_pct: 57.1
+  avg_rr: 1.57
+  profit_factor: 2.74
+  net_profit: 1585.61
+  return_pct: 15.86
+  max_drawdown_pct: -3.97
+  start_equity: 10000
+  end_equity: 11585.61
+  expected_value: 0.469
