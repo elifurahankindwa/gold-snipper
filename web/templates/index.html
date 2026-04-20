@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gold Sniper v4 — XAUUSD Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+
+<!-- TOP NAVIGATION (easyticket style) -->
+<nav class="topnav">
+  <div class="tn-brand">
+    <div class="tn-logo"><i class="fa-solid fa-crosshairs"></i></div>
+    <div>
+      <div class="tn-name">Gold Sniper</div>
+      <div class="tn-sub">XAUUSD Intelligence v4</div>
+    </div>
+  </div>
+
+  <div class="tn-tabs">
+    <a class="nt active" data-panel="p-dash"      href="#dashboard">
+      <i class="fa-solid fa-gauge-high"></i> Dashboard
+    </a>
+    <a class="nt" data-panel="p-analytics"  href="#analytics">
+      <i class="fa-solid fa-chart-candlestick"></i> Analytics
+    </a>
+    <a class="nt" data-panel="p-backtest"   onclick="goPanel(this)">
+      <i class="fa-solid fa-chart-line"></i> Backtest
+    </a>
+    <a class="nt" data-panel="p-model"      onclick="goPanel(this)">
+      <i class="fa-solid fa-brain"></i> Model
+    </a>
+    <a class="nt" data-panel="p-settings"   onclick="goPanel(this)">
+      <i class="fa-solid fa-gear"></i> Settings
+    </a>
+  </div>
+
+  <div class="tn-right">
+    <div class="live-price-bar">
+      <span class="lpb-lbl">XAU/USD</span>
+      <span class="lpb-price" id="nav-price">—</span>
+      <span class="lpb-chg" id="nav-chg">—</span>
+    </div>
+    <button class="tn-btn" id="bell-btn" onclick="toggleNotifPanel()"><i class="fa-regular fa-bell"></i><span class="bell-dot" id="bell-dot" style="display:none"></span></button>
+    <div class="tn-avatar">GS</div>
+  </div>
+</nav>
+
+<!-- PAGE LAYOUT -->
+<div class="layout">
+
+  <!-- LEFT SIDEBAR (easyticket filters style) -->
+  <aside class="sidebar">
+
+    <div class="sb-section">
+      <div class="sb-sec-title">Actions</div>
+      <button class="sb-action-btn primary" id="scan-sb" onclick="triggerScan()">
+        <i class="fa-solid fa-bolt"></i> Scan Now
+      </button>
+      <button class="sb-action-btn ghost" onclick="startLive()">
+        <i class="fa-solid fa-wifi"></i> Auto Loop
+      </button>
+      <button class="sb-action-btn ghost" onclick="trainModel()">
+        <i class="fa-solid fa-microchip"></i> Train Model
+      </button>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-sec-title">System</div>
+      <div class="sb-status-item">
+        <i class="fa-solid fa-brain"></i><span>Model</span>
+        <span class="status-pill" id="st-model">—</span>
+      </div>
+      <div class="sb-status-item">
+        <i class="fa-solid fa-wifi"></i><span>Live Loop</span>
+        <span class="status-pill" id="st-live">—</span>
+      </div>
+      <div class="sb-status-item">
+        <i class="fa-brands fa-telegram"></i><span>Telegram</span>
+        <span class="status-pill" id="st-tg">—</span>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-sec-title">Current Signal</div>
+      <div class="signal-widget" id="signal-widget">
+        <div class="sw-direction" id="sw-dir">WAITING</div>
+        <div class="sw-price" id="sw-price">$—</div>
+        <div class="sw-meta" id="sw-meta">No scan yet</div>
+        <div class="sw-risk" id="sw-risk"></div>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-sec-title">Upload Chart for Analysis</div>
+      <div class="upload-dropzone" onclick="document.getElementById('chart-input').click()">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <span>Drop chart here or click</span>
+        <small>Uses built-in CV analysis</small>
+      </div>
+      <input type="file" id="chart-input" accept="image/*" style="display:none" onchange="uploadChart(this)">
+    </div>
+
+    <div class="sb-section" style="margin-top:auto;padding-top:16px;border-top:1px solid var(--bdr)">
+      <div style="font-size:11px;color:var(--t4);text-align:center;line-height:1.6">
+        <i class="fa-solid fa-circle-info"></i> Auto loop scans every 15 min.<br>
+        Scan Now = instant analysis.
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- ═══ DASHBOARD ════════════════════════════════════════════════════ -->
+    <section class="panel active" id="p-dash">
+
+      <!-- Price overview bar (like easyticket search/filter bar) -->
+      <div class="price-overview-bar">
+        <div class="pob-item">
+          <div class="pob-label"><i class="fa-solid fa-coins"></i> Spot Price</div>
+          <div class="pob-value gold large" id="pb-price">Loading...</div>
+        </div>
+        <div class="pob-sep"></div>
+        <div class="pob-item">
+          <div class="pob-label">Change</div>
+          <div class="pob-value" id="pb-chg">—</div>
+        </div>
+        <div class="pob-sep"></div>
+        <div class="pob-item">
+          <div class="pob-label"><i class="fa-solid fa-arrow-up"></i> High</div>
+          <div class="pob-value" id="pb-high">—</div>
+        </div>
+        <div class="pob-sep"></div>
+        <div class="pob-item">
+          <div class="pob-label"><i class="fa-solid fa-arrow-down"></i> Low</div>
+          <div class="pob-value" id="pb-low">—</div>
+        </div>
+        <div class="pob-sep"></div>
+        <div class="pob-item">
+          <div class="pob-label"><i class="fa-regular fa-clock"></i> Session</div>
+          <div class="pob-value" id="pb-sess">—</div>
+        </div>
+        <div class="pob-sep"></div>
+        <div class="pob-item">
+          <div class="pob-label"><i class="fa-solid fa-globe"></i> Regime</div>
+          <div class="pob-value" id="pb-regime">—</div>
+        </div>
+        <div style="flex:1"></div>
+        <div class="pob-time" id="pb-time">—</div>
+      </div>
+
+      <!-- Signal filter tabs (like easyticket result filters) -->
+      <div class="results-header">
+        <div class="filter-tabs">
+          <button class="ftab active" onclick="filterSigs('all',this)">
+            <i class="fa-solid fa-list"></i> All Signals
+          </button>
+          <button class="ftab" onclick="filterSigs('BUY',this)">
+            <i class="fa-solid fa-arrow-trend-up"></i> Buy
+          </button>
+          <button class="ftab" onclick="filterSigs('SELL',this)">
+            <i class="fa-solid fa-arrow-trend-down"></i> Sell
+          </button>
+          <button class="ftab" onclick="filterSigs('pass',this)">
+            <i class="fa-solid fa-shield-check"></i> Risk Pass
+          </button>
+        </div>
+        <div class="results-count" id="sig-count">
+          <i class="fa-solid fa-signal"></i> <span>0 signals</span>
+        </div>
+      </div>
+
+      <!-- Signal result cards (like easyticket ticket cards) -->
+      <div class="result-cards" id="sig-list">
+        <div class="empty-card">
+          <i class="fa-solid fa-bolt-lightning"></i>
+          <h3>No signals yet</h3>
+          <p>Click <strong>Scan Now</strong> in the sidebar to analyse the current XAUUSD market</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ANALYTICS ════════════════════════════════════════════════════ -->
+    <section class="panel" id="p-analytics">
+      <div class="panel-header">
+        <div>
+          <h2><i class="fa-solid fa-chart-candlestick"></i> Market Analytics</h2>
+          <p>Live XAUUSD Smart Money Concept analysis</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span class="scan-status-chip" id="scan-chip"></span>
+          <button class="btn-primary sm" id="scan-an" onclick="triggerScan()">
+            <i class="fa-solid fa-bolt"></i> Scan Now
+          </button>
+        </div>
+      </div>
+
+      <!-- Signal summary strip -->
+      <div class="signal-strip">
+        <div class="ss-cell"><div class="ss-lbl">Signal</div><div class="ss-val" id="a-sig">—</div></div>
+        <div class="ss-cell"><div class="ss-lbl">Entry</div><div class="ss-val gold" id="a-price">—</div></div>
+        <div class="ss-cell"><div class="ss-lbl">Stop Loss</div><div class="ss-val danger" id="a-sl">—</div></div>
+        <div class="ss-cell"><div class="ss-lbl">Take Profit</div><div class="ss-val success" id="a-tp">—</div></div>
+        <div class="ss-cell"><div class="ss-lbl">R:R</div><div class="ss-val gold" id="a-rr">1:2</div></div>
+        <div class="ss-cell"><div class="ss-lbl">Confidence</div><div class="ss-val" id="a-conf">—</div></div>
+        <div class="ss-cell"><div class="ss-lbl">Confluence</div><div class="ss-val" id="a-confl">—</div></div>
+        <div class="ss-cell"><div class="ss-lbl">Regime</div><div class="ss-val" id="a-regime">—</div></div>
+      </div>
+
+      <!-- Main candlestick chart -->
+      <div class="chart-container">
+        <div class="chart-header">
+          <span><i class="fa-solid fa-chart-candlestick"></i> Price Action + SMC Zones (Last 100 bars)</span>
+          <div class="chart-legend">
+            <span class="cl buy"><i class="fa-solid fa-circle"></i> Buy</span>
+            <span class="cl sell"><i class="fa-solid fa-circle"></i> Sell</span>
+            <span class="cl ob"><i class="fa-solid fa-square"></i> Order Block</span>
+            <span class="cl fvg"><i class="fa-solid fa-square"></i> FVG</span>
+            <span class="cl kz"><i class="fa-solid fa-square"></i> Kill Zone</span>
+          </div>
+        </div>
+        <div class="canvas-wrap" id="price-cbox">
+          <canvas id="c-price"></canvas>
+          <div class="canvas-placeholder" id="price-ph">
+            <i class="fa-solid fa-bolt-lightning"></i>
+            Click Scan Now to generate the analysis chart
+          </div>
+        </div>
+      </div>
+
+      <!-- Indicator row -->
+      <div class="indicators-grid">
+        <div class="indicator-card">
+          <div class="ic-header"><i class="fa-solid fa-wave-square"></i> RSI (14)</div>
+          <div class="canvas-wrap sm"><canvas id="c-rsi"></canvas><div class="canvas-placeholder sm">—</div></div>
+          <div class="ic-footer"><span>RSI</span><strong id="a-rsi">—</strong><span class="pill" id="a-rsi-tag">—</span></div>
+        </div>
+        <div class="indicator-card">
+          <div class="ic-header"><i class="fa-solid fa-chart-bar"></i> MACD</div>
+          <div class="canvas-wrap sm"><canvas id="c-macd"></canvas><div class="canvas-placeholder sm">—</div></div>
+          <div class="ic-footer"><span>Histogram</span><strong id="a-macd">—</strong></div>
+        </div>
+        <div class="indicator-card">
+          <div class="ic-header"><i class="fa-solid fa-bolt"></i> ADX — Trend Strength</div>
+          <div class="canvas-wrap sm"><canvas id="c-adx"></canvas><div class="canvas-placeholder sm">—</div></div>
+          <div class="ic-footer"><span>ADX</span><strong id="a-adx">—</strong><span class="pill" id="a-adx-tag">—</span></div>
+        </div>
+      </div>
+
+      <!-- SMC + Feature Drivers -->
+      <div class="two-col">
+        <div class="info-card">
+          <div class="ic-hd"><i class="fa-solid fa-layer-group"></i> SMC Structure Analysis</div>
+          <div class="smc-rows" id="smc-list"><div class="placeholder-msg"><i class="fa-solid fa-bolt"></i> Run a scan first</div></div>
+        </div>
+        <div class="info-card">
+          <div class="ic-hd"><i class="fa-solid fa-brain"></i> Feature Drivers (SHAP)</div>
+          <div class="fd-rows" id="fd-list"><div class="placeholder-msg"><i class="fa-solid fa-bolt"></i> Run a scan first</div></div>
+        </div>
+      </div>
+
+      <!-- Trade Plan -->
+      <div class="trade-plan-card" id="trade-plan" style="display:none">
+        <div class="tpc-header">
+          <i class="fa-solid fa-crosshairs"></i>
+          <span id="tp-title">Trade Plan</span>
+        </div>
+        <div class="tpc-grid">
+          <div class="tpc-cell"><div class="tpc-l">Direction</div><div class="tpc-v" id="tp-dir">—</div></div>
+          <div class="tpc-cell"><div class="tpc-l">Entry Zone</div><div class="tpc-v gold" id="tp-entry">—</div></div>
+          <div class="tpc-cell"><div class="tpc-l">Stop Loss</div><div class="tpc-v danger" id="tp-sl">—</div></div>
+          <div class="tpc-cell"><div class="tpc-l">Take Profit</div><div class="tpc-v success" id="tp-tp">—</div></div>
+          <div class="tpc-cell"><div class="tpc-l">R : R</div><div class="tpc-v gold">1 : 2</div></div>
+          <div class="tpc-cell"><div class="tpc-l">Risk $</div><div class="tpc-v" id="tp-risk">—</div></div>
+          <div class="tpc-cell"><div class="tpc-l">Reward $</div><div class="tpc-v success" id="tp-reward">—</div></div>
+          <div class="tpc-cell"><div class="tpc-l">Session</div><div class="tpc-v" id="tp-sess">—</div></div>
+        </div>
+        <div class="tpc-verdict" id="tp-verdict"></div>
+      </div>
+
+      <!-- Chart image analysis result -->
+      <div class="chart-analysis-card" id="car" style="display:none">
+        <!-- Header -->
+        <div class="cac-header">
+          <span><i class="fa-solid fa-image"></i> Chart Analysis — Annotated Diagram</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="pill" id="car-bias-pill">—</span>
+            <span class="pill blue" id="car-method">—</span>
+          </div>
+        </div>
+        <!-- Zone filter toggles -->
+        <div class="zone-filter-bar" id="zone-filter-bar">
+          <span class="zfb-label"><i class="fa-solid fa-filter"></i> Show Zones:</span>
+          <button class="zone-toggle active" data-zone="liquidity"  onclick="toggleZone(this)"><i class="fa-solid fa-water"></i> Liquidity</button>
+          <button class="zone-toggle active" data-zone="support_resistance" onclick="toggleZone(this)"><i class="fa-solid fa-layer-group"></i> S/R Levels</button>
+          <button class="zone-toggle active" data-zone="order_block" onclick="toggleZone(this)"><i class="fa-solid fa-cube"></i> Order Blocks</button>
+          <button class="zone-toggle active" data-zone="fvg"        onclick="toggleZone(this)"><i class="fa-solid fa-gap"></i> FVG</button>
+          <button class="zone-toggle active" data-zone="choch"      onclick="toggleZone(this)"><i class="fa-solid fa-rotate"></i> CHOCH</button>
+          <button class="zone-toggle active" data-zone="bos"        onclick="toggleZone(this)"><i class="fa-solid fa-bolt"></i> BOS</button>
+          <button class="zone-toggle active" data-zone="premium_discount" onclick="toggleZone(this)"><i class="fa-solid fa-scale-balanced"></i> P/D</button>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button class="btn-ghost sm" onclick="selectAllZones()"><i class="fa-solid fa-check-double"></i> All</button>
+            <button class="btn-ghost sm" onclick="clearAllZones()"><i class="fa-solid fa-ban"></i> None</button>
+          </div>
+        </div>
+        <!-- SVG overlay diagram -->
+        <div class="svg-overlay-wrap" id="svg-overlay-wrap">
+          <div class="placeholder-msg" id="svg-ph">
+            <i class="fa-solid fa-chart-candlestick"></i>
+            Upload a chart screenshot to generate the annotated analysis diagram
+          </div>
+        </div>
+        <!-- Zone summary stats -->
+        <div class="zone-summary-grid" id="zone-summary"></div>
+        <!-- Observations and trade idea -->
+        <div class="cac-body">
+          <div class="cac-info" id="car-info"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ BACKTEST ═════════════════════════════════════════════════════ -->
+    <section class="panel" id="p-backtest">
+      <div class="panel-header">
+        <div><h2><i class="fa-solid fa-chart-line"></i> Backtest Results</h2><p>2-year historical simulation with full risk framework</p></div>
+        <button class="btn-primary sm" onclick="runBacktest()"><i class="fa-solid fa-play"></i> Run Backtest</button>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-ico blue"><i class="fa-solid fa-list-ol"></i></div><div><div class="kpi-l">Total Trades</div><div class="kpi-v" id="b-trades">—</div></div></div>
+        <div class="kpi-card"><div class="kpi-ico green"><i class="fa-solid fa-trophy"></i></div><div><div class="kpi-l">Win Rate</div><div class="kpi-v green" id="b-wr">—</div></div></div>
+        <div class="kpi-card"><div class="kpi-ico gold"><i class="fa-solid fa-scale-balanced"></i></div><div><div class="kpi-l">Profit Factor</div><div class="kpi-v" id="b-pf">—</div></div></div>
+        <div class="kpi-card"><div class="kpi-ico green"><i class="fa-solid fa-dollar-sign"></i></div><div><div class="kpi-l">Net Profit</div><div class="kpi-v" id="b-net">—</div></div></div>
+        <div class="kpi-card"><div class="kpi-ico blue"><i class="fa-solid fa-percent"></i></div><div><div class="kpi-l">Return</div><div class="kpi-v" id="b-ret">—</div></div></div>
+        <div class="kpi-card"><div class="kpi-ico danger"><i class="fa-solid fa-arrow-trend-down"></i></div><div><div class="kpi-l">Max Drawdown</div><div class="kpi-v danger" id="b-dd">—</div></div></div>
+        <div class="kpi-card"><div class="kpi-ico gold"><i class="fa-solid fa-bullseye"></i></div><div><div class="kpi-l">Avg R:R</div><div class="kpi-v gold" id="b-rr">—</div></div></div>
+        <div class="kpi-card"><div class="kpi-ico blue"><i class="fa-solid fa-calculator"></i></div><div><div class="kpi-l">Exp. Value</div><div class="kpi-v" id="b-ev">—</div></div></div>
+      </div>
+
+      <div class="two-col" style="margin-top:14px">
+        <div class="info-card"><div class="ic-hd"><i class="fa-regular fa-clock"></i> Session Breakdown</div><div class="breakdown-body" id="sess-bd"><div class="placeholder-msg">Run backtest first.</div></div></div>
+        <div class="info-card"><div class="ic-hd"><i class="fa-solid fa-globe"></i> Regime Breakdown</div><div class="breakdown-body" id="regime-bd"><div class="placeholder-msg">Run backtest first.</div></div></div>
+      </div>
+
+      <!-- Backtest charts — load from /api/chart/<name> -->
+      <div class="bt-chart-grid">
+        <div class="bt-chart-card">
+          <div class="btcc-hd"><i class="fa-solid fa-chart-line"></i> Equity Curve</div>
+          <img id="img-equity" src="" alt="Equity Curve" style="display:none">
+          <div class="btcc-ph" id="ph-equity"><i class="fa-solid fa-play"></i> Run backtest to generate</div>
+        </div>
+        <div class="bt-chart-card">
+          <div class="btcc-hd"><i class="fa-solid fa-chart-candlestick"></i> Signal Map</div>
+          <img id="img-signals" src="" alt="Signals" style="display:none">
+          <div class="btcc-ph" id="ph-signals"><i class="fa-solid fa-play"></i> Run backtest to generate</div>
+        </div>
+        <div class="bt-chart-card">
+          <div class="btcc-hd"><i class="fa-solid fa-table-cells"></i> Monthly P&amp;L</div>
+          <img id="img-monthly" src="" alt="Monthly" style="display:none">
+          <div class="btcc-ph" id="ph-monthly"><i class="fa-solid fa-play"></i> Run backtest to generate</div>
+        </div>
+        <div class="bt-chart-card">
+          <div class="btcc-hd"><i class="fa-solid fa-globe"></i> Regime Performance</div>
+          <img id="img-regime" src="" alt="Regime" style="display:none">
+          <div class="btcc-ph" id="ph-regime"><i class="fa-solid fa-play"></i> Run backtest to generate</div>
+        </div>
+      </div>
+
+      <div class="info-card" style="margin-top:14px">
+        <div class="ic-hd">
+          <i class="fa-solid fa-table-list"></i> Trade Log
+          <span id="bt-run-at" style="margin-left:8px;font-size:12px;color:var(--t3);font-weight:400"></span>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+            <span class="tbl-info" id="tbl-info"></span>
+            <div class="tbl-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="tbl-search" placeholder="Filter trades..." onkeyup="filterTrades(this.value)">
+            </div>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th onclick="sortTrades('entry_time')"  class="sortable">Time <i class="fa-solid fa-sort" id="sort-time"></i></th>
+                <th onclick="sortTrades('direction')"   class="sortable">Dir <i class="fa-solid fa-sort" id="sort-dir"></i></th>
+                <th onclick="sortTrades('entry_price')" class="sortable">Entry <i class="fa-solid fa-sort" id="sort-entry"></i></th>
+                <th>SL</th><th>TP</th>
+                <th onclick="sortTrades('outcome')"     class="sortable">Result <i class="fa-solid fa-sort" id="sort-result"></i></th>
+                <th onclick="sortTrades('pnl_usd')"     class="sortable">P&amp;L <i class="fa-solid fa-sort" id="sort-pnl"></i></th>
+                <th onclick="sortTrades('confidence')"  class="sortable">Conf <i class="fa-solid fa-sort" id="sort-conf"></i></th>
+                <th>Session</th>
+              </tr>
+            </thead>
+            <tbody id="trade-body"><tr><td colspan="9" class="ph-td">No data — run backtest first.</td></tr></tbody>
+          </table>
+        </div>
+        <div class="pagination-bar" id="pagination-bar" style="display:none">
+          <div class="pg-left">
+            <select class="pg-size-select" onchange="changePageSize(this.value)">
+              <option value="10">10 per page</option>
+              <option value="20" selected>20 per page</option>
+              <option value="50">50 per page</option>
+              <option value="100">100 per page</option>
+            </select>
+          </div>
+          <div class="pg-pages" id="pg-pages"></div>
+          <div class="pg-right">
+            <button class="pg-btn" id="pg-prev" onclick="changePage(-1)">
+              <i class="fa-solid fa-chevron-left"></i> Prev
+            </button>
+            <button class="pg-btn" id="pg-next" onclick="changePage(1)">
+              Next <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ MODEL ════════════════════════════════════════════════════════ -->
+    <section class="panel" id="p-model">
+      <div class="panel-header">
+        <div><h2><i class="fa-solid fa-brain"></i> ML Model</h2><p>XGBoost with walk-forward CV + out-of-sample evaluation</p></div>
+        <button class="btn-primary sm" id="train-btn" onclick="trainModel()"><i class="fa-solid fa-microchip"></i> Train Model</button>
+      </div>
+      <div class="train-status-card" id="train-card">
+        <div class="ts-idle" id="ts-idle">
+          <i class="fa-solid fa-microchip"></i>
+          <p>Click <strong>Train Model</strong> to begin. Fetches 2 years of XAUUSD + macro data, engineers 40+ SMC features, and trains with 5-fold walk-forward cross-validation plus 20% out-of-sample evaluation.</p>
+        </div>
+      </div>
+      <div class="feature-groups-grid">
+        <div class="fg-card"><div class="fg-title"><i class="fa-solid fa-water"></i> Liquidity</div><div class="fg-detail">PDH/PDL sweeps · Weekly H/L · Equal highs/lows</div></div>
+        <div class="fg-card"><div class="fg-title"><i class="fa-solid fa-sitemap"></i> Structure</div><div class="fg-detail">BOS · CHOCH · Swing highs/lows</div></div>
+        <div class="fg-card"><div class="fg-title"><i class="fa-solid fa-cube"></i> Order Blocks</div><div class="fg-detail">Bullish/Bearish OB · In-OB detection</div></div>
+        <div class="fg-card"><div class="fg-title"><i class="fa-solid fa-gap"></i> Fair Value Gaps</div><div class="fg-detail">Bullish/Bearish FVG · In-FVG flag</div></div>
+        <div class="fg-card"><div class="fg-title"><i class="fa-solid fa-ruler-combined"></i> Fibonacci</div><div class="fg-detail">61.8% · 78.6% proximity zones</div></div>
+        <div class="fg-card"><div class="fg-title"><i class="fa-regular fa-clock"></i> Kill Zones</div><div class="fg-detail">London 07-10 UTC · NY 12-15 UTC</div></div>
+        <div class="fg-card"><div class="fg-title"><i class="fa-solid fa-chart-area"></i> Technical</div><div class="fg-detail">EMA 20/50/200 · RSI · MACD · Stoch · BBands · ATR · ADX</div></div>
+        <div class="fg-card"><div class="fg-title"><i class="fa-solid fa-earth-americas"></i> Macro</div><div class="fg-detail">USD Index · Oil · S&amp;P 500 · 10Y Rates · VIX</div></div>
+        <div class="fg-card"><div class="fg-title"><i class="fa-solid fa-layer-group"></i> Regime</div><div class="fg-detail">Trending Bull/Bear · Ranging · High Vol · Crisis</div></div>
+      </div>
+    </section>
+
+    <!-- ═══ SETTINGS ══════════════════════════════════════════════════════ -->
+    <section class="panel" id="p-settings">
+      <div style="margin-bottom:20px">
+        <h2><i class="fa-solid fa-gear"></i> Settings</h2>
+        <p style="color:var(--t3);font-size:14px;margin-top:4px">Configure Telegram alerts and system parameters</p>
+      </div>
+      <div class="settings-grid">
+
+        <div class="info-card">
+          <div class="ic-hd"><i class="fa-solid fa-bell"></i> Notifications (Telegram + Gmail)</div>
+          <div class="settings-form">
+            <div class="sf-note" style="background:var(--bl);border:1.5px solid var(--blm)">
+              <i class="fa-solid fa-shield-halved" style="color:var(--blue)"></i>
+              <strong style="color:var(--blue)">Credentials are configured in <code>notifier.py</code></strong> (not in the UI for security).
+              Open <code>goldsniper_v4/notifier.py</code> and set:<br><br>
+              <code>TELEGRAM_BOT_TOKEN = "your_token"</code><br>
+              <code>TELEGRAM_CHAT_ID   = "your_chat_id"</code><br>
+              <code>GMAIL_SENDER       = "you@gmail.com"</code><br>
+              <code>GMAIL_PASSWORD     = "your_app_password"</code><br><br>
+              Gmail App Password: Google Account → Security → 2-Step Verification → App passwords
+            </div>
+            <div class="notify-status-row">
+              <div class="nsr-item">
+                <i class="fa-brands fa-telegram"></i>
+                <span>Telegram</span>
+                <span class="status-pill" id="st-tg-cfg">—</span>
+              </div>
+              <div class="nsr-item">
+                <i class="fa-solid fa-envelope"></i>
+                <span>Gmail</span>
+                <span class="status-pill" id="st-gm-cfg">—</span>
+              </div>
+            </div>
+            <div class="sf-actions">
+              <button class="btn-primary sm" onclick="testNotifications()">
+                <i class="fa-solid fa-paper-plane"></i> Send Test Message
+              </button>
+              <span class="tg-status" id="notify-st"></span>
+            </div>
+            <div class="sf-note">
+              <i class="fa-solid fa-circle-info"></i>
+              System tries Telegram first. If it fails, automatically falls back to Gmail.
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <div class="ic-hd"><i class="fa-solid fa-shield-halved"></i> Risk Rules</div>
+          <div class="risk-rules-list" id="rl-list">
+            <div class="placeholder-msg">Loading...</div>
+          </div>
+        </div>
+
+        <div class="info-card" style="grid-column:1/-1">
+          <div class="ic-hd">
+            <i class="fa-solid fa-terminal"></i> System Logs
+            <button class="btn-ghost sm" style="margin-left:auto" onclick="loadLogs()">
+              <i class="fa-solid fa-rotate"></i> Refresh
+            </button>
+          </div>
+          <div class="log-terminal" id="log-box">
+            <span style="color:var(--t4)">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Status bar -->
+<div class="status-bar">
+  <span id="sb-msg"><i class="fa-solid fa-circle-check" style="color:var(--green)"></i> Ready</span>
+  <span id="sb-time">—</span>
+</div>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay" style="display:none">
+  <div class="overlay-card">
+    <div class="spinner"></div>
+    <div id="ov-msg">Processing...</div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div id="toasts"></div>
+
+<!-- Notification panel -->
+<div class="notif-overlay" id="notif-overlay" onclick="closeNotifPanel()"></div>
+<div class="notif-panel" id="notif-panel">
+  <div class="np-header">
+    <span><i class="fa-solid fa-bell"></i> Notifications</span>
+    <div style="display:flex;gap:8px">
+      <button class="btn-ghost sm" onclick="clearNotifications()"><i class="fa-solid fa-trash"></i> Clear</button>
+      <button class="btn-ghost sm" onclick="closeNotifPanel()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+  </div>
+  <div class="np-list" id="np-list">
+    <div class="np-empty"><i class="fa-regular fa-bell-slash"></i><span>No notifications yet</span></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
