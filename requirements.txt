@@ -27,7 +27,7 @@ Jinja2==3.1.6
 click==8.3.1
 itsdangerous==2.2.0
 MarkupSafe==3.0.3
-
+gunicorn==21.2.0
 
 # ── WebSocket / Real-time transport ───────────────────────────────────────────
 python-socketio==5.16.1
