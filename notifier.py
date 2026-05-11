@@ -10,12 +10,12 @@ import email_templates as tmpl
 logger = logging.getLogger(__name__)
 
 # ── CONFIGURE YOUR CREDENTIALS HERE ────────────────────────────────────────
-TELEGRAM_BOT_TOKEN = "8695234248:AAFSu_SD6Mb170hdki92oC2nq-1voAJtoQ"   # e.g. "8695234248:AAFSu2_SD6..."
-TELEGRAM_CHAT_ID   = "6997398875"   # e.g. "987654321"
+TELEGRAM_BOT_TOKEN = ""   # e.g. "8695234248:AAFSu2_SD6..."
+TELEGRAM_CHAT_ID   = ""   # e.g. "987654321"
 
-GMAIL_SENDER    = "elifurahankindwa05@gmail.com"      # e.g. "you@gmail.com"
-GMAIL_PASSWORD  = "cmed uphd sdoj ipxa"      # Gmail App Password (Google Account → Security → App passwords)
-GMAIL_RECIPIENT = "mrpinks.tz@gmail.com"      # who receives alerts — can be same as sender
+GMAIL_SENDER    = ""      # e.g. "you@gmail.com"
+GMAIL_PASSWORD  = ""      # Gmail App Password (Google Account → Security → App passwords)
+GMAIL_RECIPIENT = ""      # who receives alerts — can be same as sender
 # ───────────────────────────────────────────────────────────────────────────
 
 
